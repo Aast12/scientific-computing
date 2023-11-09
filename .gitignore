@@ -3,3 +3,7 @@
 *.log
 *.aux
 */target
+*.fdb_latexmk
+*.log
+*.fls
+*.synctex*

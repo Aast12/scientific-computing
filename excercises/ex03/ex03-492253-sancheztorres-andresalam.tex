@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{relsize}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{titlesec}
+\usepackage[shortlabels]{enumitem}
+
+
+\title{Scientific Computing \\[0.2em]\smaller{}Assigment 3}
+\author{Andres Alam Sanchez Torres}
+\date{November 10, 2023}
+
+\begin{document}
+\maketitle
+
+\section*{Problem 1}
+
+\begin{align*}
+  00100101_2 &= 1 \cdot 2^0 + 
+               0 \cdot 2^1 + 
+               1 \cdot 2^2 +
+               0 \cdot 2^3 +
+               0 \cdot 2^4 +
+               1 \cdot 2^5 +
+               0 \cdot 2^6 +
+               0 \cdot 2^7 \\
+             &= 1 + 
+               4 +
+               32\\
+             &= 37 \\
+  \text{Two's Complement:}&~11011010_2 + 1_2\\
+                          &~11011011_2 \\ \\
+  01110101_2 &= 1 \cdot 2^0 + 
+             0 \cdot 2^1 + 
+             1 \cdot 2^2 +
+             0 \cdot 2^3 +
+             1 \cdot 2^4 +
+             1 \cdot 2^5 +
+             1 \cdot 2^6 +
+             0 \cdot 2^7 \\
+           &= 1 + 
+             4 +
+             16 +
+             32 +
+             64\\
+           &= 117 \\
+  \text{Two's Complement:}&~10001010_2 + 1_2\\
+           &~10001011_2 \\ \\
+  \shortintertext{With the same procedure:}
+  0101100010010110_2 &= 22678 \\
+  \text{Two's Complement:}&~1010011101101010_2\\ \\
+  0110100110100110_2 &= 27046 \\
+  \text{Two's Complement:}&~1001011001011010_2\\
+\end{align*}
+
+
+% 2. Patterns
+
+\section*{Problem 2}
+
+\begin{enumerate}
+  \item How many different bit patterns can be represented using 63 bits? \\
+        $2^{63}$
+  \item If we want to store any integer $x$ where $0 \leq x \leq 25$.
+        What is the smallest number of bits we can use? \\
+        $\lceil log_2(25) \rceil = 5$ \\
+        To elaborate further, $25 = 11001_2$, so we need at least 5 digits to represent 25 in binary.
+  \item If we represent colours as red-green-blue (RGB) triples, where we use 4 bits for red, 4 bits for
+  green, and 4 bits for blue. How many different colours can we represent? \\
+      As a whole, a color will be represented by 12 bits, which can represent $2^{12}$ colors.
+  \item If we represent a decimal number (like 13579) by concatenating the binary representations of
+  each decimal digit. How many bits would we need for a number which contains $n$ digits?
+
+  In general,\\
+  \begin{equation*}
+   \sum_{i = 0}^{n}
+      \begin{cases}
+        d_i \in \{0, 1\}& 1\\
+        \text{other} & \lceil log_2(d_i) \rceil \\
+     \end{cases}
+    \end{equation*}
+  Where $d_i$ is the ith digit of the decimal number. If we use a fixed set for each digit
+  we will need 4 bits per digit (since the maximum value for a digit, 9, requires such bits). Then, 
+  we will need $4 \cdot n$ bits. \\
+
+\end{enumerate}
+
+
+
+\end{document}
