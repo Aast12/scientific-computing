@@ -1,9 +1,10 @@
-.DS_Store
+*.DS_Store
 *.zip
 *.log
 *.aux
-*/target
+target/
 *.fdb_latexmk
 *.log
 *.fls
 *.synctex*
+*.o

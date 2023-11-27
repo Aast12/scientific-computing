@@ -1,0 +1,92 @@
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{relsize}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{titlesec}
+\usepackage[shortlabels]{enumitem}
+
+
+\title{Scientific Computing \\[0.2em]\smaller{}Assigment 2}
+\author{Andres Alam Sanchez Torres}
+\date{November 2, 2023}
+
+\begin{document}
+\maketitle
+
+\section*{Problem 1}
+
+Let \verb|x:i32|, when is \verb|(x & (x – 1)) == 0| true and why?
+
+The expression \verb|x & (x - 1) = 0|, holds when every pair of corresponding bits in $x$ and $x - 1$ are either different \textit{or} both equal to zero.
+
+More formally, let's denote $x_{i}, 0 \leq i < n$ as the $i$-th digit (from least to more significant) of a base-2 number $x$ with $n$ digits. Parting from the initial statement, let $x, y = x - 1$ be integers, then $x~\&~y = 0$ holds if and only if
+
+\begin{align}
+  x_i = y_{i} = 0 \lor x_{i} \neq y_{i} &&
+        \text{for every i}
+\end{align}
+
+Note if $y$ has less digits that $x$, the missing corresponding digits are considered 0.
+
+
+Now consider there are only two cases for the value of $x$:
+
+\begin{enumerate}[1)]
+  \item If the rightmost digit of $x$ is 1, i.e. $x_{0} = 1$, then the digits of $y$ are the same of $x$ except for the rightmost digit, then
+    \begin{align*}
+        x_{i} = y_{i} && \forall i \neq 0 \\
+        x_{i} \neq y_{i} && i = 0
+    \end{align*}
+    Therefore, all digits, other than the rightmost, of $x$ must be zero to hold (1), i.e. $x = 1$.
+  \item If the rightmost digit of $x$ is 0, after substracting 1, the least significant bit is set to 0, and all the bits on its right are set to 1, i.e. let $k$ be the position of the least significant bit of $x$, then
+    \begin{align*}
+      x_{i} = y_{i} && \forall i > k \\
+      y_{i} = 0, x_{i} \neq y_{i} && i = k \\
+      y_{i} = 1, x_{i} \neq y_{i} && i < k \\
+    \end{align*}
+    Therefore, for (1) to hold, $x_{i}$ must be 0 for every $i$ on the left of the least significant bit. In other words, $x$ must have only a single bit set to 1, i.e. \textbf{be a power of 2}.
+\end{enumerate}
+
+Therefore, the expression is true for \textbf{all powers of 2 greater than 0}. However, in the context of Rust, and programming languages in general, negative numbers are also represented in binary as 2's complement. Since all negative numbers have a leftmost digit of 1, the only case representing a power of 2 is the lower bound of \verb|i32|, so \verb|x -1| is out of bounds. There's also the case of \textbf{x = 0} (all bits set to 0), and since $x - 1$ is represented as $2^{32} - 1$ (all bits set to 1), the expression also holds.
+
+\section*{Problem 2}
+
+The following are the binary values of some single precision (32 bit) IEEE754 floating point values:
+
+\begin{verbatim}
+  402D F854
+  7F80 0000
+  8000 0000
+  3DCC CCCD
+  3FB5 04F3
+\end{verbatim}
+
+
+Which numbers do they represent exactly in decimal and which real number are they supposed to
+represent?
+
+\begin{enumerate}
+  \item \verb|402D F854| \\
+        exact decimal: 2.71828174591064453125 \\
+        real: 2.7182817459106445
+  \item \verb|7F80 0000| \\
+        Infinity
+  \item \verb|8000 0000| \\
+        exact decimal: -0 \\
+        real: 0
+  \item \verb|3DCC CCCD| \\
+        exact decimal: 0.100000001490116119384765625 \\
+        real: 0.10000000149011612
+  \item \verb|3FB5 04F3| \\
+        exact decimal: 1.41421353816986083984375 \\
+        real: 1.4142135381698608
+\end{enumerate}
+
+
+\end{document}
