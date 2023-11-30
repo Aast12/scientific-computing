@@ -1,15 +1,16 @@
-//! Andres Alam Sanchez Torres 492253
 use std::{
     cmp::{self, Ordering},
-    collections::{BinaryHeap, HashSet, VecDeque},
-    env::{self, current_dir},
+    collections::{BinaryHeap, VecDeque},
     fs::File,
     io::{BufRead, BufReader},
-    time::Instant,
 };
 
 #[derive(Clone)]
-struct Edge(usize, i64); // (adjacent node, weight)
+struct Edge {
+    from: usize,
+    to: usize,
+    cost: i64,
+}
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct SearchState {
@@ -32,10 +33,10 @@ impl PartialOrd for SearchState {
 #[derive(Clone, Copy)]
 struct PathDistance {
     source: usize,
-    cost: i64
+    cost: i64,
 }
 
-struct Graph {
+pub struct Graph {
     adjacencies: Vec<Vec<Edge>>,
     vertices: usize,
 }
@@ -43,14 +44,14 @@ struct Graph {
 impl Graph {
     fn get_values_from_line(line: String) -> Vec<i64> {
         line.trim()
-            .split(" ")
+            .split(' ')
             .map(|s| s.parse::<i64>().expect("Can't parse values from graph"))
             .collect::<Vec<_>>()
     }
 
-    fn read_from_file(file_path: &str) -> Self {
+    pub fn read_from_file(file_path: &str) -> Self {
         let graph_file =
-            File::open(file_path).expect(format!("File {} does not exist", file_path).as_str());
+            File::open(file_path).unwrap_or_else(|_| panic!("File {} does not exist", file_path));
         let mut reader: BufReader<File> = BufReader::new(graph_file);
 
         let mut graph_shape_line = String::new();
@@ -73,8 +74,16 @@ impl Graph {
                 _ => panic!("Can't parse graph edge"),
             };
 
-            adjacencies[node_0].push(Edge(node_1, weight));
-            adjacencies[node_1].push(Edge(node_0, weight));
+            adjacencies[node_0].push(Edge {
+                from: node_0,
+                to: node_1,
+                cost: weight,
+            });
+            adjacencies[node_1].push(Edge {
+                from: node_1,
+                to: node_0,
+                cost: weight,
+            });
         }
 
         Graph {
@@ -83,7 +92,7 @@ impl Graph {
         }
     }
 
-    fn bfs_depth(&self, start: usize) -> usize {
+    pub fn bfs_depth(&self, start: usize) -> usize {
         let mut visited: Vec<bool> = vec![false; self.vertices];
         self.bfs_depth_managed(start, &mut visited)
     }
@@ -98,7 +107,12 @@ impl Graph {
             let (current_node, current_depth) = bfs_queue.pop_front().unwrap();
             tree_depth = cmp::max(tree_depth, current_depth);
 
-            for Edge(adj_node, _) in &self.adjacencies[current_node] {
+            for Edge {
+                from: _,
+                to: adj_node,
+                cost: _,
+            } in &self.adjacencies[current_node]
+            {
                 if !visited[*adj_node] {
                     bfs_queue.push_back((*adj_node, current_depth + 1));
                     visited[*adj_node] = true;
@@ -109,7 +123,7 @@ impl Graph {
         tree_depth
     }
 
-    fn connected_components(&self) -> usize {
+    pub fn connected_components(&self) -> usize {
         let mut visited: Vec<bool> = vec![false; self.vertices];
         let mut connected_components = 0;
 
@@ -124,8 +138,13 @@ impl Graph {
         connected_components
     }
 
-    fn rebuild_path(&self, source: usize, target: usize, distance: Vec<PathDistance>) -> Vec<usize> {
-        let mut path = vec![target];
+    fn rebuild_path(
+        &self,
+        source: usize,
+        target: usize,
+        distance: Vec<PathDistance>,
+    ) -> Vec<usize> {
+        let mut path = vec![];
         let mut current_node = target;
 
         while current_node != source {
@@ -134,15 +153,22 @@ impl Graph {
         }
 
         path.push(source);
+        path.reverse();
 
         path
     }
 
-    fn shortest_path(&self, source: usize, target: usize) -> Option<(i64, Vec<usize>)> {
+    pub fn shortest_path(&self, source: usize, target: usize) -> Option<(i64, Vec<usize>)> {
         let mut nodes_q: BinaryHeap<SearchState> = BinaryHeap::new();
-        let mut distance = vec![PathDistance { source , cost: i64::MAX }; self.vertices];
+        let mut distance = vec![
+            PathDistance {
+                source,
+                cost: i64::MAX
+            };
+            self.vertices
+        ];
 
-        distance[source] = PathDistance {source, cost: 0};
+        distance[source] = PathDistance { source, cost: 0 };
         nodes_q.push(SearchState {
             node: source,
             cost: 0,
@@ -158,81 +184,52 @@ impl Graph {
             }
 
             let adj_edges = &self.adjacencies[node];
-            for Edge(adj_node, adj_cost) in adj_edges {
-                let new_cost = cost + adj_cost;
+            for edge in adj_edges {
+                let new_cost = cost + edge.cost;
 
-                if new_cost < distance[node].cost {
+                if new_cost < distance[edge.to].cost {
                     nodes_q.push(SearchState {
-                        node: *adj_node,
+                        node: edge.to,
                         cost: new_cost,
                     });
-                    distance[node] = PathDistance {source: *adj_node, cost: new_cost};
+                    distance[edge.to] = PathDistance {
+                        source: node,
+                        cost: new_cost,
+                    };
                 }
             }
         }
 
-        return None;
+        None
     }
 
-    fn minimum_spanning_tree(&self) -> i64 {
-        let mut deduplicated_edges = self
-            .adjacencies
-            .iter()
-            .enumerate()
-            .map(|(i, row)| {
-                row.iter()
-                    .filter_map(|Edge(adj, cost)| {
-                        if *adj > i {
-                            Some((i.clone(), adj.clone(), cost))
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+    pub fn minimum_spanning_tree(&self) -> i64 {
+        let mut parent: Vec<usize> = (0..self.vertices).collect();
+        let mut edges = self.adjacencies.iter().flatten().collect::<Vec<_>>();
 
-        deduplicated_edges
-            .sort_by(|(_, _, cost_a), (_, _, cost_b)| cost_a.partial_cmp(cost_b).unwrap());
+        edges.sort_by(|edge_a, edge_b| edge_a.cost.partial_cmp(&edge_b.cost).unwrap());
 
-        let mut connected_nodes: HashSet<usize> = HashSet::new();
-        let mut cost_sum = 0;
+        let mut cost_sum: i64 = 0;
 
-        for (from, to, next_cost) in deduplicated_edges {
-            if connected_nodes.contains(&from) && connected_nodes.contains(&to) {
-               continue;
+        for Edge {
+            from,
+            to,
+            cost: next_cost,
+        } in edges
+        {
+            if parent[*from] != parent[*to] {
+                cost_sum += next_cost;
+
+                let new_parent = parent[*from];
+                let replaced_parent = parent[*to];
+                for node_parent in parent.iter_mut() {
+                    if *node_parent == replaced_parent {
+                        *node_parent = new_parent;
+                    }
+                }
             }
-
-            connected_nodes.insert(from);
-            connected_nodes.insert(to);
-            cost_sum += next_cost;
         }
 
         cost_sum
     }
-}
-
-fn main() {
-    let start_time = Instant::now();
-
-    let mut args = env::args();
-    let graph_path = args.nth(1).expect("Can't get graph path from args");
-    let start_node: usize = args
-        .next()
-        .expect("Can't get start node from args")
-        .parse()
-        .expect("Can't parse start node value");
-
-    let graph: Graph = Graph::read_from_file(&graph_path);
-
-    let depth = graph.bfs_depth(start_node - 1);
-    let components = graph.connected_components();
-
-    let duration = start_time.elapsed();
-
-    println!("Depth: {}", depth);
-    println!("Components: {}", components);
-    println!("Time: {:.2} s", duration.as_secs_f64());
 }
